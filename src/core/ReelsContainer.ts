@@ -1,5 +1,10 @@
 import * as PIXI from 'pixi.js';
+import Game from './Game';
 import Reel from './Reel';
+declare function js_wrapped_EX_Krilloud_Play(a:string, b:number): Promise<number>;
+declare function js_wrapped_EX_Krilloud_UpdateKVar_INT(a:string, b:number, c:number): Promise<void>; 
+declare function js_wrapped_EX_Krilloud_StopTag(a:string, b:number): Promise<number>;
+
 
 export default class ReelsContainer {
     public readonly reels: Array<Reel> = [];
@@ -15,8 +20,7 @@ export default class ReelsContainer {
             this.reels.push(reel);
             this.container.addChild(reel.container);
         }
-
-        this.container.x = REEL_OFFSET_LEFT;
+        this.container.x = REEL_OFFSET_LEFT;   
     }
 
     async spin() {
@@ -25,19 +29,35 @@ export default class ReelsContainer {
         const shiftingDelay = 500;
         const start = Date.now();
         const reelsToSpin = [...this.reels];
+
+        if(!Game.prototype.firstPlayCalled) {
+            const playBackgroundSound = await js_wrapped_EX_Krilloud_Play("music",3)
+            Game.prototype.firstPlayCalled = true     
+        }
+        
+        const playReel1 =  await js_wrapped_EX_Krilloud_Play("ruleta",0) 
         
         for await (let value of this.infiniteSpinning(reelsToSpin)) {
             const shiftingWaitTime = (this.reels.length - reelsToSpin.length + 1) * shiftingDelay;
             
             if (Date.now() >= start + shiftingWaitTime) {
-                reelsToSpin.shift();
+                var reelStopped = reelsToSpin.shift()
+                var reelTexture = reelStopped ? reelStopped.sprites[2].texture.textureCacheIds[0] : null 
+
+                let textureId = reelStopped?.textures.findIndex(item => item.textureCacheIds[0] === reelTexture)
+                if(textureId !== undefined) {
+                    await js_wrapped_EX_Krilloud_UpdateKVar_INT("fruits", 0, textureId)
+                    const playFruit =  await js_wrapped_EX_Krilloud_Play("fruits",0)
+                }                
             }
 
-            if (!reelsToSpin.length) break;
+            if (!reelsToSpin.length) {
+                await js_wrapped_EX_Krilloud_StopTag("ruleta", 0)
+                break;
+            } 
         }
 
         // reel.sprites[2] - Middle visible symbol of the reel
-        //
         return this.checkForWin(this.reels.map(reel => reel.sprites[2]));
     }
 

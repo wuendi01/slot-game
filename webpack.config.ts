@@ -14,7 +14,12 @@ module.exports = {
     clean: true,
   },
   resolve: {
-    extensions: [".ts", ".js"],
+    extensions: [".ts", ".js", ".wasm"],
+    fallback: {
+      path: false,
+      fs: false,
+      crypto: false
+  },
   },
   module: {
     rules: getLoaders(),

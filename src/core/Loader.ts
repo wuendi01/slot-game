@@ -8,11 +8,14 @@ export default class Loader {
         this.loader = app.loader;
         this.loadAssets();
         this.loader.load(() => {
-            app.stage.removeChild(this.loadingScreen);
             onAssetsLoaded();
         });
         this.generateLoadingScreen(app.screen.width, app.screen.height);
         app.stage.addChild(this.loadingScreen);
+    }
+
+    public getLoadingScreen() {
+        return this.loadingScreen
     }
 
     private loadAssets() {
